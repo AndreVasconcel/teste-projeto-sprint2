@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API no Beanstalk</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Projeto Sprint 2/3</h1>
+        <p>Projeto está rodando no Elastic Beanstalk!</p>
+
+        <div class="status">
+            <h3>Última Atualização do Feed</h3>
+            <p id="feed-date">Clique no botão abaixo para verificar</p>
+        </div>
+
+        <div class="buttons">
+            <button class="btn" onclick="getLatestFeedDate()">🕒 Verificar Última Atualização</button>
+            <button class="btn" onclick="getExtractFeed()">Extrair Conteúdo RSS</button>
+            <button class="btn" onclick="downloadEditalContents()">📄 Baixar conteúdos com "edital"</button>
+            <button class="btn" onclick="window.location.reload()">🔄 Recarregar</button>
+        </div>
+
+    <script>
+        async function getLatestFeedDate() {
+            const response = await fetch('/latest-date');
+            const data = await response.json();
+            document.getElementById('feed-date').innerHTML = `
+                <strong>Data mais recente:</strong> ${new Date(data.mostRecentDate).toLocaleString()}
+            `;
+        }
+
+        async function getExtractFeed() {
+            const response = await fetch('/update-rss');
+            const resultText = await response.text();
+            alert('Conteúdo extraído com sucesso!');
+        }
+
+        async function downloadEditalContents() {
+            const response = await fetch('/edital-texts');
+
+            if (!response.ok) {
+                throw new Error(`Erro HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (!Array.isArray(data.textos) || data.textos.length === 0) {
+                alert('Nenhum conteúdo com "edital" foi encontrado.');
+                return;
+            }
+
+            const textoFinal = data.textos
+                .map((t, i) => `🔹 Conteúdo ${i + 1}:\n${t}\n`)
+                .join('\n---\n\n');
+
+            const blob = new Blob([textoFinal], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'conteudos_edital.txt';
+            document.body.appendChild(link);
+            link.click();
+
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert('Arquivo gerado com sucesso!');
+        }
+    </script>
+</body>
+</html>
